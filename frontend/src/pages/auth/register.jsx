@@ -23,6 +23,7 @@ export default function register({ onRegister }){
                 { username, email, password },
                 { headers: { "Content-Type": "application/json" } }
             );
+            
             localStorage.setItem("userInfo", JSON.stringify(data));
             onRegister(data);
         }catch (err){
@@ -37,8 +38,10 @@ export default function register({ onRegister }){
 
     return (
         <div className="auth-page">
-            <h2>Create an Account</h2>
-
+            <div className="rmaintxt">
+                <h2>Create an Account</h2>
+            </div>
+           
             <form onSubmit={handleRegister}>
                 <input
                     placeholder="Username"

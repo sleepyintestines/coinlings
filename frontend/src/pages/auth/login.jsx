@@ -31,7 +31,9 @@ export default function login({ onLogin }){
 
     return (
         <div className="auth-page">
-            <h2>Welcome Back</h2>
+            <div className="lmaintxt">
+                <h2>Welcome Back</h2>
+            </div>
 
             <form onSubmit={handleLogin}>
                 <input

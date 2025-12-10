@@ -3,6 +3,8 @@ import dotenv from "dotenv"
 import cors from "cors"
 import connectDB from "./config/database.js"
 import authRoutes from "./routes/auth.js"
+import coinlingRoutes from "./routes/coinling.js"
+import transactionRoutes from "./routes/transactions.js"
 
 dotenv.config();
 connectDB();
@@ -14,6 +16,8 @@ app.use(cors());
 
 // register routes
 app.use("/api/auth", authRoutes);
+app.use("/api/coinling", coinlingRoutes);
+app.use("/api/transactions", transactionRoutes);
 
 // start serverS
 const PORT = process.env.PORT || 5000;

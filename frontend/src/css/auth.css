@@ -53,3 +53,17 @@
 .auth-page p a:hover {
     text-decoration: underline;
 }
+
+.rmaintxt {
+    font-size: 50px;
+    white-space: nowrap;
+    align-self: center;
+    margin-left: -80px;
+}
+
+.lmaintxt {
+    font-size: 50px;
+    white-space: nowrap;
+    align-self: center;
+    margin-left: -35px;
+}

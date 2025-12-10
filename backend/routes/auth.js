@@ -5,7 +5,8 @@ import User from "../schemas/User.js"
 const router = express.Router();
 
 const generateToken = (id) => {
-    jwt.sign({id}, process.env.JWT_SECRET, {expiresIn: "30d"});
+    // return the signed jwt so callers receive a token string
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 }
 
 // user registration route
@@ -36,6 +37,7 @@ router.post("/register", async (req, res) => {
             _id: user._id,
             username: user.username,
             email: user.email,
+            balance: user.balance,
             token: generateToken(user._id),
         });
     }catch (err){
@@ -64,6 +66,7 @@ router.post("/login", async (req, res) => {
             _id: user._id,
             username: user.username,
             email: user.email,
+            balance: user.balance,
             token: generateToken(user._id),
         });
     }catch (err){
