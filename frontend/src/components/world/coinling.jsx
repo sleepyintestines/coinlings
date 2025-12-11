@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, forwardRef } from "react"
 
-const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDragEnd, onClick, canDrag = true}, ref){
+const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDragEnd, onClick, canDrag = true, playableAreaPercent = 100, playableAreaOffset = 0}, ref){
     const internalRef = useRef(null);
 
     const setRef = (el) => {
@@ -52,7 +52,17 @@ const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDr
             const mouseX = (e.clientX - rect.left - offset.x) / rect.width;
             const mouseY = (e.clientY - rect.top - offset.y) / rect.height;
 
-            onMove(mouseX * 100, mouseY * 100);
+            const newLeftPercent = mouseX * 100;
+            const newTopPercent = mouseY * 100;
+
+            // constrain to accessible area
+            const minPos = playableAreaOffset;
+            const maxPos = playableAreaOffset + playableAreaPercent;
+            
+            const constrainedLeft = Math.min(Math.max(newLeftPercent, minPos), maxPos);
+            const constrainedTop = Math.min(Math.max(newTopPercent, minPos), maxPos);
+
+            onMove(constrainedLeft, constrainedTop);
         };
 
         // drop coinling
@@ -79,7 +89,7 @@ const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDr
             document.removeEventListener("mousemove", handleMouseMove);
             document.removeEventListener("mouseup", handleMouseUp);
         };
-    }, [dragging, offset, onMove, onDragEnd]);
+    }, [dragging, offset, onMove, onDragEnd, playableAreaPercent, playableAreaOffset]);
 
     return (
         <img

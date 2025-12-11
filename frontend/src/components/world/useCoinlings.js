@@ -1,22 +1,25 @@
 import { useState, useEffect } from "react"
 
-export default function useCoinlings(count){
+export default function useCoinlings(count, playableAreaPercent = 100, playableAreaOffset = 0){
     const [positions, setPositions] = useState([]);
-
-    const fieldWidth = 100;
-    const fieldHeight = 100;
     const coinlingSize = 10;
+
+    // calculate constraints for movement within accessible area
+    const minPos = playableAreaOffset;
+    const maxPos = playableAreaOffset + playableAreaPercent;
+    const constrainedFieldWidth = playableAreaPercent;
+    const constrainedFieldHeight = playableAreaPercent;
 
     // initializes position data for each coinling, runs everytime count changes
     useEffect(() => {
         const newPositions = [];
         for(let i = 0; i < count; i++){
-            // determines where coinling will start (random)
-            const startTop = Math.random() * (fieldHeight - coinlingSize);
-            const startleft = Math.random() * (fieldWidth - coinlingSize);
-            // determines where coinling should move (random)
-            const targetTop = Math.random() * (fieldHeight - coinlingSize);
-            const targetLeft = Math.random() * (fieldWidth - coinlingSize);
+            // determines where coinling will start (random within accessible area)
+            const startTop = minPos + Math.random() * (constrainedFieldHeight - coinlingSize);
+            const startleft = minPos + Math.random() * (constrainedFieldWidth - coinlingSize);
+            // determines where coinling should move (random within accessible area)
+            const targetTop = minPos + Math.random() * (constrainedFieldHeight - coinlingSize);
+            const targetLeft = minPos + Math.random() * (constrainedFieldWidth - coinlingSize);
 
             newPositions.push({
                 top: startTop,
@@ -29,7 +32,7 @@ export default function useCoinlings(count){
         }
 
         setPositions(newPositions);
-    }, [count]);
+    }, [count, playableAreaPercent, playableAreaOffset]);
 
     // movement logic
     useEffect(() => {
@@ -58,8 +61,8 @@ export default function useCoinlings(count){
                                         idx === i ? {
                                             ...ent,
                                             waiting: false,
-                                            targetTop: Math.random() * (fieldHeight - coinlingSize),
-                                            targetLeft: Math.random() * (fieldWidth - coinlingSize),
+                                            targetTop: minPos + Math.random() * (constrainedFieldHeight - coinlingSize),
+                                            targetLeft: minPos + Math.random() * (constrainedFieldWidth - coinlingSize),
                                             duration: 3 + Math.random() * 2,
                                         } : ent
                                     )
@@ -74,11 +77,11 @@ export default function useCoinlings(count){
                         const stepX = (dx / distance) * speed;
                         const stepY = (dy / distance) * speed;
 
-                        // keeps coinling inside field
+                        // keeps coinling inside accessible area
                         return {
                             ...p,
-                            top: Math.min(Math.max(p.top + stepY, 0), fieldHeight - coinlingSize),
-                            left: Math.min(Math.max(p.left + stepX, 0), fieldWidth - coinlingSize),
+                            top: Math.min(Math.max(p.top + stepY, minPos), maxPos - coinlingSize),
+                            left: Math.min(Math.max(p.left + stepX, minPos), maxPos - coinlingSize),
                         };
                     })
                 );
@@ -92,7 +95,7 @@ export default function useCoinlings(count){
 
         // cleanup
         return () => intervals.forEach(clearInterval);
-    }, [positions]);
+    }, [positions, minPos, maxPos, constrainedFieldHeight, constrainedFieldWidth, coinlingSize]);
 
     return{positions, setPositions};
 }

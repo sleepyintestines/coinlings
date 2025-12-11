@@ -125,6 +125,16 @@ function Content() {
     }
   };
 
+  const refreshCoinlings = async () => {
+    if (!user) return;
+    try{
+      const g = await apiFetch("/coinling", {token: user.token});
+      setCoinlings(g);
+    }catch (err){
+      console.error("Failed to refresh coinlings ->", err);
+    }
+  }
+
   return (
     <Routes>
 
@@ -154,7 +164,7 @@ function Content() {
 
       {/* village page */}
       <Route
-        path="/villages/:id"
+        path="/village/:id"
         element={
           !user ? (
             <Navigate to="/login" />
@@ -181,7 +191,7 @@ function Content() {
             <div className="loading-screen">Loading...</div>
           ) : (
             <>
-              <Overworld coinlings={coinlings} />
+              <Overworld coinlings={coinlings} onRefresh={refreshCoinlings}/>
 
               {modal === "add" && (
                 <Add onClose={() => setModal(null)} onAdd={handleAdd} />
