@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, forwardRef } from "react"
 
-const coinling = forwardRef(function Coinling({ position, onMove, onDragEnd, onClick, canDrag = true}, ref){
+const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDragEnd, onClick, canDrag = true}, ref){
     const internalRef = useRef(null);
 
     const setRef = (el) => {
@@ -84,7 +84,7 @@ const coinling = forwardRef(function Coinling({ position, onMove, onDragEnd, onC
     return (
         <img
             ref={setRef}
-            src="/sprites/coinling.png"
+            src={coinling.sprite}
             alt="coinling"
             className={`coinling ${isMoving ? "coinling-moving" : ""}`}
             style={{

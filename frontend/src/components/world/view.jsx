@@ -106,6 +106,7 @@ function view() {
                 {positions.map((p, i) => (
                     <Coinling
                         key={i}
+                        coinling={coinlings[i]}
                         ref={(el) => {
                             if (el && selected?.index === i && !selected.rect) {
                                 const rect = el.getBoundingClientRect();
