@@ -6,11 +6,14 @@ import Dialogue from "./dialogue.jsx"
 import { Camera } from "./camera.js"
 import { apiFetch } from "../../fetch.js"
 
-function view() {
+function view({hideHeader}) {
     const { id } = useParams();
     const [village, setVillage] = useState(null);
     const [selected, setSelected] = useState(null); 
     const [coinlings, setCoinlings] = useState([]);
+    const [isEditing, setIsEditing] = useState(false);
+    const [newName, setNewName] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
     const { 
         camera, 
         MIN_SCALE, 
@@ -92,6 +95,7 @@ function view() {
 
                 setVillage(payload.village);
                 setCoinlings(payload.coinlings || []);
+                setNewName(payload.village.name || "Village");
             } catch (err) {
                 console.error("Failed to load village:", err);
             }
@@ -102,15 +106,109 @@ function view() {
     const count = coinlings.length;
     const {positions, setPositions} = useCoinlings(count, playableAreaPercent, centerOffset);
 
+    // edit village name
+    const updateVillageName = async (villageId, name) => {
+        const token = localStorage.getItem("token");
+        return await apiFetch(`/villages/${villageId}/name`, {
+            method: "PATCH",
+            body: { name },
+            token
+        });
+    };
+
+    const handleSave = async () => {
+        if (!newName.trim() || newName === village.name) {
+            setIsEditing(false);
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const updatedVillage = await updateVillageName(village._id, newName);
+            setVillage(updatedVillage);
+            setIsEditing(false);
+        } catch (err) {
+            console.error("Failed to update village name:", err);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") handleSave();
+        if (e.key === "Escape") {
+            setNewName(village.name);
+            setIsEditing(false);
+        }
+    };
+
     return (
-        <div
-            className="field"
-            onMouseDown={handleCameraDown}
-            onMouseMove={handleCameraMove}
-            onMouseUp={handleCameraUp}
-            onMouseLeave={handleCameraUp}
-            style={{ cursor: camera.scale > MIN_SCALE + 0.001 ? "grab" : "default" }}
-        >
+        <>
+            {village && !hideHeader && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: "20px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "white",
+                        color: "black",
+                        padding: "12px 24px",
+                        borderRadius: "8px",
+                        fontSize: "1.2rem",
+                        zIndex: 1000,
+                        border: "2px solid rgba(255, 255, 255, 0.3)",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+                        pointerEvents: "auto",
+                    }}
+                >
+                    {isEditing ? (
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onBlur={handleSave}
+                            disabled={isSaving}
+                            autoFocus
+                            style={{
+                                fontWeight: "bold",
+                                marginBottom: "4px",
+                                textAlign: "center",
+                                background: "rgba(255, 255, 255, 0.2)",
+                                border: "1px solid rgba(255, 255, 255, 0.5)",
+                                padding: "4px 8px",
+                                borderRadius: "4px",
+                                fontSize: "1.2rem",
+                                width: "200px",
+                            }}
+                        />
+                    ) : (
+                        <div
+                            style={{
+                                fontWeight: "bold",
+                                marginBottom: "4px",
+                                textAlign: "center",
+                                cursor: "pointer",
+                            }}
+                            onClick={() => setIsEditing(true)}
+                        >
+                            {village.name || "Village"}
+                        </div>
+                    )}
+                    <div style={{ fontSize: "1rem", color: "#ccc", textAlign: "center" }}>
+                        {count}/{village.capacity}
+                    </div>
+                </div>
+            )}
+            <div
+                className="field"
+                onMouseDown={handleCameraDown}
+                onMouseMove={handleCameraMove}
+                onMouseUp={handleCameraUp}
+                onMouseLeave={handleCameraUp}
+                style={{ cursor: camera.scale > MIN_SCALE + 0.001 ? "grab" : "default" }}
+            >
             <div
                 style={{
                     width: "300vw",
@@ -251,7 +349,8 @@ function view() {
                     />
                 )}
             </div>
-        </div>
+            </div>
+        </>
     );
 }
 

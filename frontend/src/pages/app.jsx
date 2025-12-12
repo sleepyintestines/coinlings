@@ -29,6 +29,7 @@ function Content() {
   const [hidden, setHidden] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
+  const [hideHeader, setHideHeader] = useState(false);
   const navigate = useNavigate();
 
   const goToField = () => {
@@ -216,10 +217,17 @@ function Content() {
             <Navigate to="/login" />
           ) : (
             <div>
-              <View />
+              <View hideHeader={hideHeader} />
               <div className="taskbar">
                 <button onClick={goToField}>
                   <img src="/icons/taskbar-icons/back-arrow.png" />
+                </button>
+                <button onClick={() => setHideHeader(!hideHeader)}>
+                  {hideHeader ? (
+                      <img src="/icons/taskbar-icons/eye-closed-icon.png" />
+                  ) : (
+                      <img src="/icons/taskbar-icons/eye-icon.png" />
+                  )}
                 </button>
               </div>
             </div>
@@ -227,7 +235,7 @@ function Content() {
         }
       />
 
-      {/* MAIN APP (Field) */}
+      {/* main page */}
       <Route
         path="/"
         element={
