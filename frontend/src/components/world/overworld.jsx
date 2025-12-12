@@ -5,7 +5,7 @@ import { apiFetch } from "../../fetch.js"
 
 import "../../css/overworld.css";
 
-function overworld({coinlings, onRefresh}) {
+function overworld({coinlings, onRefresh, deleteMode, onDeleteVillage}) {
     const [villages, setVillages] = useState([]);
 
     // for merging villages
@@ -213,13 +213,24 @@ function overworld({coinlings, onRefresh}) {
                         <div
                             key={v._id}
                             title={`${v.name || "Village"} (${count}/${v.capacity})`}
-                            onMouseDown={(e) => handleVillageMouseDown(e, v)}
+                            onMouseDown={(e) => {
+                                if(deleteMode) return; 
+                                handleVillageMouseDown(e, v);
+                            }}
                             onClick={(e) => {
-                                if (suppressClickRef.current) {
-                                    suppressClickRef.current = false;
+                                if(suppressClickRef.current) {
+                                    e.stopPropagation();
                                     e.preventDefault();
+                                    suppressClickRef.current = false;
                                     return;
                                 }
+
+                                if(deleteMode){
+                                    e.stopPropagation();
+                                    onDeleteVillage(v._id);
+                                    return;
+                                }
+
                                 navigate(`/village/${v._id}`);
                             }}
                             style={{
@@ -229,16 +240,27 @@ function overworld({coinlings, onRefresh}) {
                                 width: "5%",
                                 height: "5%",
                                 transform: "translate(-50%, -50%)",
-                                background: canMerge ? "#22c55e" : isHovered ? "#eab308" : "black",
-                                cursor: isDragging ? "grabbing" : "grab",
+                                background: deleteMode
+                                    ? (count === 0 ? "#ef4444" : "#666")
+                                    : (canMerge ? "#22c55e" : isHovered ? "#eab308" : "black"),
+                                cursor: deleteMode
+                                    ? (count === 0 ? "pointer" : "not-allowed")
+                                    : (isDragging ? "grabbing" : "grab"),
                                 borderRadius: "6px",
                                 display: "flex",
                                 flexDirection: "column",
                                 justifyContent: "center",
                                 alignItems: "center",
                                 color: "white",
-                                border: canMerge ? "3px solid #16a34a" : isHovered ? "3px solid #ca8a04" : "none",
+                                border: canMerge
+                                    ? "3px solid #16a34a"
+                                    : isHovered
+                                        ? "3px solid #ca8a04"
+                                        : deleteMode && count === 0
+                                            ? "3px solid #dc2626"
+                                            : "none",
                                 transition: isDragging ? "none" : "background 0.2s",
+                                opacity: deleteMode && count > 0 ? 0.5 : 1
                             }}
                         >
                             <div>{v.name || "V"}</div>

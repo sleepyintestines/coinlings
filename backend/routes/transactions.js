@@ -18,7 +18,7 @@ async function ensureCoinlingCount(userId, desiredCount){
         const need = desiredCount - aliveCount;
         for(let i = 0; i < need; i++){
             // fetch all of user's villages
-            const villages = await Village.find({ user: userId });
+            const villages = await Village.find({ user: userId, deleted: false });
             let chosen = null;
 
             // look for available villages

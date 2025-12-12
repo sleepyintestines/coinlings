@@ -7,6 +7,7 @@ const villageSchema = new mongoose.Schema({
     topPercent: { type: Number, required: true, min: 0, max: 100 },
     capacity: { type: Number, default: 2 },
     createdAt: { type: Date, default: Date.now },
+    deleted: {type: Boolean, default: false}
 }, { timestamps: true });
 
 export default mongoose.model("Village", villageSchema);

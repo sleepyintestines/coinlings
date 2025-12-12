@@ -70,6 +70,11 @@
   height: 30px;
 }
 
+.taskbar img:hover{
+  transform: scale(1.2);
+  transition: transform 0.2s ease;
+}
+
 .loading-screen {
   position: fixed;
   top: 50%;

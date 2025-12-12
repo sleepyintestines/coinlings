@@ -8,7 +8,7 @@ const router = express.Router();
 // get all villages for current user
 router.get("/", protect, async (req, res) => {
     try {
-        const villages = await Village.find({user: req.user}).sort({createdAt: 1});
+        const villages = await Village.find({user: req.user, deleted: false}).sort({createdAt: 1});
         res.json(villages);
     } catch (err) {
         res.status(500).json({message: err.message});
@@ -18,7 +18,7 @@ router.get("/", protect, async (req, res) => {
 // get single village and its coinlings
 router.get("/:id", protect, async (req, res) => {
     try {
-        console.log("Fetching village:", {villageId: req.params.id, userId: req.user});
+        console.log("Fetching village:", {villageId: req.params.id, userId: req.user, deleted: false});
         const village = await Village.findOne({_id: req.params.id, user: req.user});
 
         if (!village){
@@ -37,7 +37,7 @@ router.get("/:id", protect, async (req, res) => {
 router.put("/:id/position", protect, async (req, res) => {
     try {
         const {leftPercent, topPercent} = req.body;
-        const village = await Village.findOne({_id: req.params.id, user: req.user});
+        const village = await Village.findOne({_id: req.params.id, user: req.user, deleted: false});
 
         if (!village){
             return res.status(404).json({message: "Village not found"});
@@ -62,9 +62,9 @@ router.post("/merge", protect, async (req, res) => {
         const {sourceId, targetId} = req.body;
         console.log("Merge request:", { sourceId, targetId, user: req.user && req.user._id ? req.user._id : req.user });
         // source village = village user is dragging
-        const source = await Village.findOne({_id: sourceId, user: req.user});
+        const source = await Village.findOne({_id: sourceId, user: req.user, deleted: false});
         // target village = village user is merging into
-        const target = await Village.findOne({_id: targetId, user: req.user});
+        const target = await Village.findOne({_id: targetId, user: req.user, deleted: false});
 
         if(!source || !target){
             return res.status(404).json({message: "One or both villages not found!"});
@@ -116,5 +116,58 @@ router.post("/merge", protect, async (req, res) => {
         res.status(500).json({message: err.message});
     }
 });
+
+// create village
+router.post("/create", protect, async (req, res) => {
+    try{
+        const leftPercent = Math.floor(Math.random() * 80) + 10;
+        const topPercent = Math.floor(Math.random() * 80) + 10;
+
+        const village = new Village({
+            user: req.user,
+            leftPercent,
+            topPercent,
+            name: "Village",
+            capcity: 2
+        });
+
+        await village.save();
+        res.status(201).json({village});
+    }catch (err){
+        res.status(500).json({message: err.message})
+    }
+});
+
+// delete village
+router.delete("/:id", protect, async (req, res) => {
+    try{
+        const village = await Village.findOne({
+            _id: req.params.id,
+            user: req.user,
+            deleted: false
+        });
+
+        if(!village){
+            return res.status(404).json({message: "Village was not found!"});
+        }
+
+        // check if village is empty
+        const count = await Coinling.countDocuments({
+            village: village._id,
+            dead: false
+        });
+
+        if(count > 0){
+            return res.status(400).json({message: "Village must be empty before deleted!"});
+        }
+
+        // soft delete
+        village.deleted = true;
+        await village.save();
+        res.json({message: "Village deleted successfully!"});
+    }catch (err){
+        res.status(500).json({message: err.message});
+    }
+})
 
 export default router;

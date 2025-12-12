@@ -28,6 +28,7 @@ function Content() {
   const [modal, setModal] = useState(null);
   const [hidden, setHidden] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteMode, setDeleteMode] = useState(false);
   const navigate = useNavigate();
 
   const goToField = () => {
@@ -39,8 +40,6 @@ function Content() {
 
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-
         // get transactions 
         const tx = await apiFetch("/transactions", { token: user.token });
         console.log("Transactions fetched:", tx);
@@ -56,7 +55,9 @@ function Content() {
       } catch (err) {
         console.error("Error fetching data ->", err);
       } finally {
-        setTimeout(() => setIsLoading(false), 800);
+        if(isLoading){
+          setTimeout(() => setIsLoading(false), 800);
+        }
       }
     };
 
@@ -135,6 +136,43 @@ function Content() {
     }
   }
 
+  // create a new village
+  const createNewVillage = async () => {
+    if (!user) return;
+    try {
+      const token = localStorage.getItem("token");
+      await apiFetch("/villages/create", {
+        method: "POST",
+        token
+      });
+
+      await refreshCoinlings();
+    } catch (err) {
+      console.error("Failed to create village ->", err);
+      alert(err.message || "Failed to create village");
+    }
+  };
+
+  const toggleDeleteMode = () => {
+    setDeleteMode(prev => !prev);
+  };
+
+  // delete an empty village
+  const deleteVillage = async (villageId) => {
+    if (!user) return;
+    try {
+      await apiFetch(`/villages/${villageId}`, {
+        method: "DELETE",
+        token: user.token
+      });
+
+      await refreshCoinlings();
+    } catch (err) {
+      console.error("Failed to delete village ->", err);
+      alert(err.message || "Village must be empty!");
+    }
+  };
+
   return (
     <Routes>
 
@@ -145,7 +183,11 @@ function Content() {
           user ? (
             <Navigate to="/" />
           ) : (
-            <Login onLogin={(u) => { localStorage.setItem("token", u.token); setIsLoading(true); setUser(u); }} />
+            <Login onLogin={(u) => { 
+              localStorage.setItem("token", u.token); 
+              setIsLoading(true); 
+              setUser(u); 
+            }} />
           )
         }
       />
@@ -157,7 +199,11 @@ function Content() {
           user ? (
             <Navigate to="/" />
           ) : (
-              <Register onRegister={(u) => { localStorage.setItem("token", u.token); setIsLoading(true); setUser(u); }} />
+              <Register onRegister={(u) => { 
+                localStorage.setItem("token", u.token); 
+                setIsLoading(true); 
+                setUser(u); 
+              }} />
           )
         }
       />
@@ -191,7 +237,12 @@ function Content() {
             <div className="loading-screen">Loading...</div>
           ) : (
             <>
-              <Overworld coinlings={coinlings} onRefresh={refreshCoinlings}/>
+              <Overworld 
+                coinlings={coinlings} 
+                onRefresh={refreshCoinlings} 
+                deleteMode={deleteMode} 
+                onDeleteVillage={deleteVillage}
+              />
 
               {modal === "add" && (
                 <Add onClose={() => setModal(null)} onAdd={handleAdd} />
@@ -229,6 +280,16 @@ function Content() {
                     <img src="/icons/taskbar-icons/eye-icon.png" />
                   )}
                 </button>
+                    <button onClick={createNewVillage} disabled={deleteMode}>
+                      <img src="/icons/taskbar-icons/create.png" />
+                    </button>
+                    <button onClick={toggleDeleteMode}>
+                      {deleteMode ? (
+                        <img src="/icons/taskbar-icons/delete-on.png" />
+                      ) : (
+                        <img src="/icons/taskbar-icons/delete.png" />
+                      )}
+                    </button>
                 <button onClick={logout}>
                   <img src="/icons/taskbar-icons/logout-icon.png" />
                 </button>

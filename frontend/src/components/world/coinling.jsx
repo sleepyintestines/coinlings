@@ -92,21 +92,7 @@ const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDr
     }, [dragging, offset, onMove, onDragEnd, playableAreaPercent, playableAreaOffset]);
 
     return (
-        <img
-            ref={setRef}
-            src={coinling.sprite}
-            alt="coinling"
-            className={`coinling ${isMoving ? "coinling-moving" : ""}`}
-            style={{
-                top: `${top}%`,
-                left: `${left}%`,
-                transition: dragging || paused
-                    ? "none"
-                    : `top ${duration}s linear, left ${duration}s linear`,
-                position: "absolute",
-                cursor: canDrag ? "grab" : "default",
-                pointerEvents: "auto",
-            }}
+        <div
             onMouseDown={handleMouseDown}
             onClick={(e) => {
                 if (suppressClickRef.current) {
@@ -118,8 +104,31 @@ const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDr
 
                 onClick?.(e);
             }}
-            draggable={false}
-        />
+            style={{
+                top: `${top}%`,
+                left: `${left}%`,
+                transition: dragging || paused ? "none" : `top ${duration}s linear, left ${duration}s linear`,
+                position: "absolute",
+                cursor: canDrag ? "grab" : "default",
+                pointerEvents: "auto",
+                transform: dragging ? "scale(1.25)" : "scale(1)",
+                transformOrigin: "center bottom",
+            }}
+        >
+            <img
+                ref={setRef}
+                src={coinling.sprite}
+                alt="coinling"
+                className={`coinling ${isMoving ? "coinling-moving" : ""}`}
+                style={{
+                    position: "relative",
+                    width: "auto",
+                    height: "auto",
+                    transformOrigin: "center bottom",
+                }}
+                draggable={false}
+            />
+        </div>
     );
 });
 

@@ -1,9 +1,6 @@
 import express from "express"
 import Coinling from "../schemas/Coinling.js"
-import Village from "../schemas/Village.js"
 import { protect } from "../middleware/authm.js"
-import { randomPersonality, dialoguesFor } from "../utils/generateDialogue.js"
-import { randomName } from "../utils/generateName.js"
 
 const router = express.Router();
 

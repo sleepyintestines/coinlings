@@ -27,7 +27,7 @@ coinlingSchema.pre("save", function() {
     if(!this.rarity){
         const roll = Math.random();
         if (roll < 0.60) this.rarity = "common";
-        else if (roll < 0.95) this.rarity = "rare";
+        else if (roll < 0.99) this.rarity = "rare";
         else this.rarity = "legendary";
     }
 
