@@ -3,68 +3,147 @@ import Transaction from "../schemas/Transaction.js"
 import User from "../schemas/User.js"
 import Coinling from "../schemas/Coinling.js"
 import Village from "../schemas/Village.js"
+import mongoose from "mongoose"
 import {protect} from "../middleware/authm.js"
 import { randomPersonality, dialoguesFor } from "../utils/generateDialogue.js"
 import { randomName } from "../utils/generateName.js"
+import { getSprite } from "../utils/generateSprite.js"
 
 const router = express.Router();
 
 async function ensureCoinlingCount(userId, desiredCount){
-    const alive = await Coinling.find({user: userId, dead: false}).sort({createdAt: 1});
+    // convert userId string to ObjectId for proper database queries
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    
+    const alive = await Coinling.find({user: userObjectId, dead: false}).sort({createdAt: 1}).lean();
     const aliveCount = alive.length;
 
     // create missing
     if(aliveCount < desiredCount){
         const need = desiredCount - aliveCount;
+        
+        // fetch villages once and get current counts in single aggregation query
+        const villages = await Village.find({ user: userObjectId, deleted: false }).lean();
+        const villageCounts = await Coinling.aggregate([
+            { $match: { user: userObjectId, dead: false } },
+            { $group: { _id: "$village", count: { $sum: 1 } } }
+        ]);
+        
+        const countMap = new Map(villageCounts.map(v => [v._id.toString(), v.count]));
+        
+        // prepare batch of coinlings to create
+        const coinlingsToCreate = [];
+        let newVillages = [];
+        
         for(let i = 0; i < need; i++){
-            // fetch all of user's villages
-            const villages = await Village.find({ user: userId, deleted: false });
             let chosen = null;
-
-            // look for available villages
+            
+            // look for available villages - check ALL villages before creating new one
             for (const v of villages) {
-                const count = await Coinling.countDocuments({village: v._id, dead: false});
-                if (count < v.capacity) {
+                const currentCount = countMap.get(v._id.toString()) || 0;
+                if (currentCount < v.capacity) {
                     chosen = v;
+                    countMap.set(v._id.toString(), currentCount + 1);
                     break;
                 }
             }
 
-            // if none available, auto-create new village
+            // only create new village if ALL existing villages are at max capacity
             if (!chosen) {
-                // generate starting positions
-                const leftPercent = Math.floor(Math.random() * 80) + 10; 
-                const topPercent = Math.floor(Math.random() * 80) + 10;
-                chosen = await Village.create({
-                    user: userId,
-                    leftPercent,
-                    topPercent
+                // check if we already have a pending new village with space
+                const pendingVillage = newVillages.find(nv => {
+                    const tempId = nv.tempId;
+                    const currentCount = countMap.get(tempId) || 0;
+                    return currentCount < nv.capacity;
                 });
+                
+                if (pendingVillage) {
+                    chosen = pendingVillage;
+                    const tempId = pendingVillage.tempId;
+                    const currentCount = countMap.get(tempId) || 0;
+                    countMap.set(tempId, currentCount + 1);
+                } else {
+                    // create new village only when necessary
+                    const leftPercent = Math.floor(Math.random() * 80) + 10; 
+                    const topPercent = Math.floor(Math.random() * 80) + 10;
+                    const tempId = `temp_${Date.now()}_${i}`;
+                    chosen = {
+                        user: userObjectId,
+                        leftPercent,
+                        topPercent,
+                        capacity: 2,
+                        name: "Village",
+                        tempId // temporary id for tracking before insertion
+                    };
+                    newVillages.push(chosen);
+                    countMap.set(tempId, 1);
+                }
             }
 
-            // create coinling in the chosen village
+            // prepare coinling data
             const personality = randomPersonality();
-            await Coinling.create({
-                user: userId,
-                village: chosen._id,
+            
+            // manually generate rarity and sprite (since insertMany bypasses pre-save hooks)
+            const roll = Math.random();
+            let rarity;
+            if (roll < 0.60) rarity = "common";
+            else if (roll < 0.99) rarity = "rare";
+            else rarity = "legendary";
+            
+            coinlingsToCreate.push({
+                user: userObjectId,
+                village: chosen._id || chosen.tempId, // use real id or temp id
                 name: randomName(),
                 personality,
                 dialogues: dialoguesFor(personality),
+                rarity,
+                sprite: getSprite(rarity),
             });
+        }
+        
+        // bulk create new villages if needed
+        if (newVillages.length > 0) {
+            const created = await Village.insertMany(newVillages.map(nv => ({
+                user: nv.user,
+                leftPercent: nv.leftPercent,
+                topPercent: nv.topPercent,
+                capacity: nv.capacity,
+                name: nv.name
+            })));
+            
+            // create mapping from temp ids to real ids
+            const tempIdToRealId = new Map();
+            created.forEach((village, idx) => {
+                tempIdToRealId.set(newVillages[idx].tempId, village._id);
+            });
+            
+            // update village ids in coinlings
+            for (let i = 0; i < coinlingsToCreate.length; i++) {
+                const villageId = coinlingsToCreate[i].village;
+                if (typeof villageId === 'string' && villageId.startsWith('temp_')) {
+                    coinlingsToCreate[i].village = tempIdToRealId.get(villageId);
+                }
+            }
+        }
+        
+        // bulk create all coinlings at once
+        if (coinlingsToCreate.length > 0) {
+            await Coinling.insertMany(coinlingsToCreate);
         }
 
         return;
     }
 
-    // mark dead
+    // mark dead using bulk update
     if(aliveCount > desiredCount){
         const remove = aliveCount - desiredCount;
         const toKill = alive.slice(0, remove);
+        const idsToKill = toKill.map(g => g._id);
 
-        for(const g of toKill){
-            g.dead = true;
-            await g.save();
-        }
+        await Coinling.updateMany(
+            { _id: { $in: idsToKill } },
+            { $set: { dead: true } }
+        );
 
         return;
     }

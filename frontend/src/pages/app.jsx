@@ -94,7 +94,10 @@ function Content() {
       setTransactions(prev => [newTx, ...prev]);
       // update balance
       setBalance(res.balance);
-      setUser(prev => ({ ...prev, balance: res.balance }));
+      const updatedUser = { ...user, balance: res.balance };
+      setUser(updatedUser);
+      // persist to localStorage
+      localStorage.setItem("userInfo", JSON.stringify(updatedUser));
 
       // refresh & update amount of coinlings
       const g = await apiFetch("/coinling", { token: user.token });
@@ -127,7 +130,10 @@ function Content() {
       setTransactions(prev => [newTx, ...prev]);
       // update balance
       setBalance(res.balance);
-      setUser(prev => ({ ...prev, balance: res.balance }));
+      const updatedUser = { ...user, balance: res.balance };
+      setUser(updatedUser);
+      // persist to localStorage
+      localStorage.setItem("userInfo", JSON.stringify(updatedUser));
 
       // refresh & update amount of coinlings
       const g = await apiFetch("/coinling", { token: user.token });
