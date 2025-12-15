@@ -11,6 +11,8 @@ import Add from "../pages/functions/add.jsx"
 import Subtract from "../pages/functions/subtract.jsx"
 import History from "../pages/functions/history.jsx"
 
+import List from "../pages/other/list.jsx"
+
 import { apiFetch } from "../fetch.js"
 
 import "../css/app.css"
@@ -31,6 +33,8 @@ function Content() {
   const [deleteMode, setDeleteMode] = useState(false);
   const [hideHeader, setHideHeader] = useState(false);
   const [show, setShow] = useState(true);
+  const [list, setList] = useState([]);
+
   const navigate = useNavigate();
 
   const goToField = () => {
@@ -95,6 +99,12 @@ function Content() {
       // refresh & update amount of coinlings
       const g = await apiFetch("/coinling", { token: user.token });
       setCoinlings(g);
+
+      // show list of new coinlings
+      if (res.birthed && res.birthed.length > 0) {
+        setList(res.birthed);
+        setModal("birthed");
+      }
     } catch (err) {
       console.error(err);
       throw err;
@@ -122,6 +132,12 @@ function Content() {
       // refresh & update amount of coinlings
       const g = await apiFetch("/coinling", { token: user.token });
       setCoinlings(g);
+
+      // show list of killed coinlings
+      if(res.dead && res.dead.length > 0){
+        setList(res.dead);
+        setModal("dead");
+      }
     } catch (err) {
       console.error(err);
       throw err;
@@ -273,6 +289,26 @@ function Content() {
                 <History
                   onClose={() => setModal(null)}
                   transactions={transactions}
+                />
+              )}
+              {modal === "dead" && (
+                <List
+                  onClose={() => {
+                    setModal(null);
+                    setList([]);
+                  }}
+                  list={list}
+                  type="dead"
+                />
+              )}
+              {modal === "birthed" && (
+                <List
+                  onClose={() => {
+                    setModal(null);
+                    setList([]);
+                  }}
+                  list={list}
+                  type="new"
                 />
               )}
 

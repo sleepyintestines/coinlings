@@ -8,33 +8,15 @@ function history({ onClose, transactions }) {
     const sortedTransactions = [...transactions].sort((a, b) => {
         return new Date(b.date) - new Date(a.date);
     });
-    useEffect(() => {
-        const historyList = document.querySelector(".history-list");
-
-        // check if element exists before adding event listener
-        if(historyList){
-            const handleWheel = (e) => {
-                e.preventDefault();
-                historyList.scrollBy({
-                    top: e.deltaY,
-                    behavior: "smooth",
-                });
-            };
-
-            // attach event to listener
-            historyList.addEventListener("wheel", handleWheel);
-
-            return () => {
-                historyList.removeEventListener("wheel", handleWheel);
-            };
-        }
-    }, []);
 
     return (
         <Modal onClose={onClose}>
             <h2>Transaction History</h2>
 
-            <div className="history-list">
+            <div 
+                className="history-list"
+                onWheel={(e) => e.stopPropagation()}
+            >
                 {sortedTransactions.length === 0 && <p>No transactions yet...</p>}
 
                 {sortedTransactions.map((t, index) => {

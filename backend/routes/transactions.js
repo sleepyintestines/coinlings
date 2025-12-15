@@ -110,9 +110,27 @@ router.post("/", protect, async(req, res) => {
         const desiredCount = Math.max(0, Math.floor(userDoc.balance / 1000));
         await ensureCoinlingCount(req.user, desiredCount);
 
+        // record all dead coinlings
+        const dead = await Coinling.find({
+            user: req.user,
+            dead: true,
+            // get all coinlings marked dead in last second
+            updatedAt: {$gte: new Date(Date.now() - 1000)}
+        }).select('name sprite rarity');
+
+        // record all new coinlings
+        const birthed = await Coinling.find({
+            user: req.user,
+            dead: false,
+            // get all coinlings created in last second
+            updatedAt: { $gte: new Date(Date.now() - 1000) }
+        }).select('name sprite rarity');
+
         res.json({
-            transaction, 
-            balance: userDoc.balance
+            transaction,
+            balance: userDoc.balance,
+            dead: dead || [],
+            birthed: birthed || []
         });
     }catch (err){
         res.status(500).json({message: err.message});
