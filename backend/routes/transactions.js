@@ -308,6 +308,9 @@ router.get("/analytics/summary", protect, async(req, res) => {
         const thisWeekStart = getWeekStart(now);
         thisWeekStart.setHours(0, 0, 0, 0);
 
+        const nextWeekStart = new Date(thisWeekStart);
+        nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+
         const lastWeekStart = new Date(thisWeekStart);
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
@@ -320,12 +323,24 @@ router.get("/analytics/summary", protect, async(req, res) => {
         const thisMonthStart = getMonthStart(now);
         thisMonthStart.setHours(0, 0, 0, 0);
 
+        const nextMonthStart = new Date(thisMonthStart);
+        nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+
+        const lastMonthStart = new Date(thisMonthStart);
+        lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+
+        const twoMonthsAgoStart = new Date(thisMonthStart);
+        twoMonthsAgoStart.setMonth(twoMonthsAgoStart.getMonth() - 2);
+
+        const threeMonthsAgoStart = new Date(thisMonthStart);
+        threeMonthsAgoStart.setMonth(threeMonthsAgoStart.getMonth() - 3);
+
         // get all transactions
         const transactions = await Transaction.find({user: userObjectId}).lean();
 
         // this week spending
         const thisWeekSpent = transactions
-            .filter(t => t.type === "subtract" && new Date(t.date) >= thisWeekStart)
+            .filter(t => t.type === "subtract" && new Date(t.date) >= thisWeekStart && new Date(t.date) < nextWeekStart)
             .reduce((sum, t) => sum + t.amount, 0);
 
         // last 3 weeks for comparison
@@ -343,12 +358,34 @@ router.get("/analytics/summary", protect, async(req, res) => {
 
         // this month spending
         const thisMonthSpent = transactions
-            .filter(t => t.type === "subtract" && new Date(t.date) >= thisMonthStart)
+            .filter(t => t.type === "subtract" && new Date(t.date) >= thisMonthStart && new Date(t.date) < nextMonthStart)
             .reduce((sum, t) => sum + t.amount, 0);
 
         // this month income
         const thisMonthIncome = transactions
-            .filter(t => t.type === "add" && new Date(t.date) >= thisMonthStart)
+            .filter(t => t.type === "add" && new Date(t.date) >= thisMonthStart && new Date(t.date) < nextMonthStart)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        // previous months for comparison
+        const lastMonthSpent = transactions
+            .filter(t => t.type === "subtract" && new Date(t.date) >= lastMonthStart && new Date(t.date) < thisMonthStart)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const twoMonthsAgoSpent = transactions
+            .filter(t => t.type === "subtract" && new Date(t.date) >= twoMonthsAgoStart && new Date(t.date) < lastMonthStart)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const threeMonthsAgoSpent = transactions
+            .filter(t => t.type === "subtract" && new Date(t.date) >= threeMonthsAgoStart && new Date(t.date) < twoMonthsAgoStart)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        // lifetime totals
+        const lifetimeIncome = transactions
+            .filter(t => t.type === "add")
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const lifetimeSpent = transactions
+            .filter(t => t.type === "subtract")
             .reduce((sum, t) => sum + t.amount, 0);
 
         // category analysis (only for subtract/expense transactions)
@@ -391,6 +428,13 @@ router.get("/analytics/summary", protect, async(req, res) => {
                 return acc;
             }, {worthIt: 0, notWorthIt: 0, worthItAmount: 0, notWorthItAmount: 0});
 
+        // get month names for labels
+        const getMonthName = (date) => {
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            return monthNames[date.getMonth()];
+        };
+
         res.json({
             thisWeek: {
                 spent: thisWeekSpent,
@@ -402,11 +446,18 @@ router.get("/analytics/summary", protect, async(req, res) => {
                 {week: "Last week", spent: lastWeekSpent},
                 {week: "This week", spent: thisWeekSpent}
             ],
+            monthlyComparison: [
+                {month: getMonthName(lastMonthStart), spent: lastMonthSpent},
+                {month: getMonthName(thisMonthStart), spent: thisMonthSpent}
+            ],
             thisMonth: {
                 spent: thisMonthSpent,
                 income: thisMonthIncome,
-                net: thisMonthIncome - thisMonthSpent,
                 start: thisMonthStart.toISOString()
+            },
+            lifetime: {
+                income: lifetimeIncome,
+                spent: lifetimeSpent,
             },
             categories: {
                 mostUsed: mostUsedCategory ? {

@@ -40,6 +40,7 @@ function Analytics({ onClose, onError }) {
     }
 
     const maxWeeklySpent = Math.max(...analytics.weeklyComparison.map(w => w.spent), 1);
+    const maxMonthlySpent = Math.max(...analytics.monthlyComparison.map(m => m.spent), 1);
 
     return (
         <Modal onClose={onClose}>
@@ -72,7 +73,7 @@ function Analytics({ onClose, onError }) {
                     borderRadius: "12px",
                     marginBottom: "20px"
                 }}>
-                    <h3 style={{ marginTop: 0, color: "#333" }}>Weekly Spending Trend</h3>
+                    <h3 style={{ marginTop: 0, marginBottom: "50px", color: "#333" }}>Weekly Spending Trend</h3>
                     <div style={{ display: "flex", alignItems: "flex-end", height: "200px", gap: "10px" }}>
                         {analytics.weeklyComparison.map((week, index) => {
                             const barHeight = (week.spent / maxWeeklySpent) * 180; // 180px max (leaving room for label)
@@ -118,6 +119,59 @@ function Analytics({ onClose, onError }) {
                     </div>
                 </div>
 
+                {/* monthly comparison bar chart */}
+                <div style={{
+                    background: "#f8f9fa",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    marginBottom: "20px"
+                }}>
+                    <h3 style={{ marginTop: 0, marginBottom: "50px", color: "#333" }}>Monthly Spending Comparison</h3>
+                    <div style={{ display: "flex", alignItems: "flex-end", height: "200px", gap: "10px" }}>
+                        {analytics.monthlyComparison.map((month, index) => {
+                            const barHeight = (month.spent / maxMonthlySpent) * 180;
+                            const isThisMonth = index === analytics.monthlyComparison.length - 1;
+                            return (
+                                <div key={index} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
+                                    <div style={{
+                                        width: "100%",
+                                        height: `${barHeight}px`,
+                                        background: isThisMonth
+                                            ? "linear-gradient(to top, #10b981, #059669)"
+                                            : "linear-gradient(to top, #60a5fa, #3b82f6)",
+                                        borderRadius: "8px 8px 0 0",
+                                        position: "relative",
+                                        transition: "all 0.3s ease",
+                                        minHeight: month.spent > 0 ? "20px" : "0"
+                                    }}>
+                                        <div style={{
+                                            position: "absolute",
+                                            top: "-25px",
+                                            left: "50%",
+                                            transform: "translateX(-50%)",
+                                            fontSize: "0.85rem",
+                                            fontWeight: "bold",
+                                            color: "#333",
+                                            whiteSpace: "nowrap"
+                                        }}>
+                                            ₱{month.spent.toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <p style={{
+                                        fontSize: "0.75rem",
+                                        marginTop: "8px",
+                                        color: isThisMonth ? "#10b981" : "#666",
+                                        fontWeight: isThisMonth ? "bold" : "normal",
+                                        textAlign: "center"
+                                    }}>
+                                        {month.month}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 {/* this month summary */}
                 <div style={{
                     background: "white",
@@ -140,15 +194,29 @@ function Analytics({ onClose, onError }) {
                                 ₱{analytics.thisMonth.spent.toLocaleString()}
                             </p>
                         </div>
+                    </div>
+                </div>
+
+                {/* lifetime summary */}
+                <div style={{
+                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    marginBottom: "20px",
+                    color: "white"
+                }}>
+                    <h3 style={{ marginTop: 0, color: "white" }}>Lifetime</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
                         <div>
-                            <p style={{ fontSize: "0.85rem", color: "#666", margin: "0 0 5px 0" }}>Remaining</p>
-                            <p style={{
-                                fontSize: "1.5rem",
-                                margin: 0,
-                                color: analytics.thisMonth.net >= 0 ? "#10b981" : "#ef4444",
-                                fontWeight: "bold"
-                            }}>
-                                ₱{analytics.thisMonth.net.toLocaleString()}
+                            <p style={{ fontSize: "0.85rem", opacity: 0.9, margin: "0 0 5px 0" }}>Total Income</p>
+                            <p style={{ fontSize: "1.8rem", margin: 0, fontWeight: "bold" }}>
+                                ₱{analytics.lifetime.income.toLocaleString()}
+                            </p>
+                        </div>
+                        <div>
+                            <p style={{ fontSize: "0.85rem", opacity: 0.9, margin: "0 0 5px 0" }}>Total Spent</p>
+                            <p style={{ fontSize: "1.8rem", margin: 0, fontWeight: "bold" }}>
+                                ₱{analytics.lifetime.spent.toLocaleString()}
                             </p>
                         </div>
                     </div>
