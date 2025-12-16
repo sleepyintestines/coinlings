@@ -80,14 +80,14 @@ function Content() {
   };
 
   // adds an amount to the balance and records the transaction
-  const handleAdd = async (amount, date, notes) => {
+  const handleAdd = async (amount, date, notes, category) => {
     if (!user) return;
 
     try {
       const res = await apiFetch("/transactions", {
         method: "POST",
         token: user.token,
-        body: { type: "add", amount, date, notes },
+        body: { type: "add", amount, date, notes, category },
       });
 
       // saves new transaction
@@ -116,14 +116,14 @@ function Content() {
   };
 
   // subtracts an amount from the balance and records the transaction
-  const handleSubtract = async (amount, date, notes, worthIt) => {
+  const handleSubtract = async (amount, date, notes, worthIt, category) => {
     if (!user) return;
 
     try {
       const res = await apiFetch("/transactions", {
         method: "POST",
         token: user.token,
-        body: { type: "subtract", amount, date, notes, worthIt },
+        body: { type: "subtract", amount, date, notes, worthIt, category },
       });
 
       // saves new transaction

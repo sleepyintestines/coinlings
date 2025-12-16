@@ -1,13 +1,41 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Modal from "../../components/modal.jsx"
+import { apiFetch } from "../../fetch.js"
 
 function history({ onClose, transactions }) {
     const [selectedTx, setSelectedTx] = useState(null);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [localTransactions, setLocalTransactions] = useState(transactions);
     
     // sort transactions by date, latest first
-    const sortedTransactions = [...transactions].sort((a, b) => {
+    const sortedTransactions = [...localTransactions].sort((a, b) => {
         return new Date(b.date) - new Date(a.date);
     });
+
+    const updateWorthIt = async (transactionId, worthIt) => {
+        setIsUpdating(true);
+        try {
+            const token = localStorage.getItem("token");
+            const updatedTx = await apiFetch(`/transactions/${transactionId}`, {
+                method: "PATCH",
+                token,
+                body: { worthIt }
+            });
+            
+            // update the selected transaction
+            setSelectedTx(updatedTx);
+            
+            // update the local transactions list
+            setLocalTransactions(prev => 
+                prev.map(tx => tx._id === transactionId ? updatedTx : tx)
+            );
+        } catch (err) {
+            console.error("Failed to update transaction:", err);
+            alert(err.message || "Failed to update transaction");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     return (
         <Modal onClose={onClose}>
@@ -55,14 +83,59 @@ function history({ onClose, transactions }) {
                         <p>
                             <strong>Date:</strong> {selectedTx.date}
                         </p>
+                        {selectedTx.category && (
+                            <p>
+                                <strong>Category:</strong> {selectedTx.category}
+                            </p>
+                        )}
                         {selectedTx.notes && (
                             <p>
                                 <strong>Notes:</strong> {selectedTx.notes}
                             </p>
                         )}
                         {selectedTx.type === "subtract" && (
-                            <p>
-                                <strong>Worth it?</strong> {selectedTx.worthIt ? "Yes" : "No"}
+                            <p style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                                <strong>Worth it?</strong>
+                                <div style={{display: "flex", gap: "8px"}}>
+                                    <button
+                                        onClick={() => updateWorthIt(selectedTx._id, true)}
+                                        disabled={isUpdating || selectedTx.worthIt === true}
+                                        style={{
+                                            padding: "4px 16px",
+                                            backgroundColor: selectedTx.worthIt === true ? "#22c55e" : "#374151",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            cursor: isUpdating || selectedTx.worthIt === true ? "not-allowed" : "pointer",
+                                            opacity: isUpdating || selectedTx.worthIt === true ? 0.6 : 1,
+                                            fontSize: "12px",
+                                            transition: "transform 0.3s ease", 
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'} 
+                                        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'} 
+                                    >
+                                        Yes
+                                    </button>
+                                    <button
+                                        onClick={() => updateWorthIt(selectedTx._id, false)}
+                                        disabled={isUpdating || selectedTx.worthIt === false}
+                                        style={{
+                                            padding: "4px 16px",
+                                            backgroundColor: selectedTx.worthIt === false ? "#ef4444" : "#374151",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            cursor: isUpdating || selectedTx.worthIt === false ? "not-allowed" : "pointer",
+                                            opacity: isUpdating || selectedTx.worthIt === false ? 0.6 : 1,
+                                            fontSize: "12px",
+                                            transition: "transform 0.3s ease", 
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+                                        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'} 
+                                    >
+                                        No
+                                    </button>
+                                </div>
                             </p>
                         )}
                     </div>

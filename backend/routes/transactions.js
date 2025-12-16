@@ -158,10 +158,51 @@ router.get("/", protect, async (req, res) => {
         res.status(500).json({message: err.message});
     }
 });
+// get all categories (default + user custom)
+router.get("/categories", protect, async (req, res) => {
+    try{
+        const { type } = req.query; // 'add' or 'subtract'
+        
+        const addCategories = [
+            "Salary",
+            "Allowance",
+            "Business",
+            "Gift Received",
+            "Refund",
+            "Investment",
+        ];
 
+        const subtractCategories = [
+            "Food & Dining",
+            "Transportation",
+            "Clothes",
+            "Entertainment",
+            "Bills & Utilities",
+            "Healthcare",
+            "Education",
+            "Gift Given",
+        ];
+
+        const defaultCategories = type === "add" ? addCategories : subtractCategories;
+
+        // get unique user-created categories for this transaction type
+        const userCategories = await Transaction.distinct("category", {
+            user: req.user,
+            type: type,
+            category: { $exists: true, $nin: [...addCategories, ...subtractCategories] }
+        });
+
+        res.json({
+            default: defaultCategories,
+            custom: userCategories
+        });
+    }catch (err){
+        res.status(500).json({message: err.message});
+    }
+});
 // record new transaction
 router.post("/", protect, async(req, res) => {
-    const {type, amount, date, notes, worthIt} = req.body;
+    const {type, amount, date, notes, worthIt, category} = req.body;
 
     if(!type || typeof amount !== "number"){
         return res.status(400).json({message: "Missing type or amount!"});
@@ -176,6 +217,7 @@ router.post("/", protect, async(req, res) => {
             date,
             notes, 
             worthIt,
+            category,
         });
 
         // update the balance
@@ -211,6 +253,31 @@ router.post("/", protect, async(req, res) => {
             dead: dead || [],
             birthed: birthed || []
         });
+    }catch (err){
+        res.status(500).json({message: err.message});
+    }
+});
+
+// update transaction (worthIt flag)
+router.patch("/:id", protect, async(req, res) => {
+    try{
+        const {worthIt} = req.body;
+        
+        const transaction = await Transaction.findOne({
+            _id: req.params.id,
+            user: req.user
+        });
+
+        if(!transaction){
+            return res.status(404).json({message: "Transaction not found!"});
+        }
+
+        if(typeof worthIt === "boolean"){
+            transaction.worthIt = worthIt;
+            await transaction.save();
+        }
+
+        res.json(transaction);
     }catch (err){
         res.status(500).json({message: err.message});
     }

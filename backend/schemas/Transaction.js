@@ -7,6 +7,7 @@ const transactionSchema = new mongoose.Schema({
     date: {type: String, required: true},
     notes: {type: String},
     worthIt: {type: Boolean},
+    category: {type: String},
 }, {timestamps: true});
 
 export default mongoose.model("Transaction", transactionSchema);
