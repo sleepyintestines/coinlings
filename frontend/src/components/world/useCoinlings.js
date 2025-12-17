@@ -2,14 +2,15 @@ import { useState, useEffect } from "react"
 
 export default function useCoinlings(count, playableAreaPercent = 100, playableAreaOffset = 0){
     const [positions, setPositions] = useState([]);
-    const coinlingSize = 10;
+    const coinlingSize = 5;
 
     // calculate constraints for movement within accessible area
     const minPos = playableAreaOffset;
     const maxPos = playableAreaOffset + playableAreaPercent;
+    const middlePos = playableAreaOffset + (playableAreaPercent / 2);
     
-    // minimum distance for target positions (scales with playable area, but has a floor)
-    const minTravelDistance = Math.max(15, playableAreaPercent * 0.2);
+    // minimum distance for target positions 
+    const minTravelDistance = Math.max(50, playableAreaPercent * 0.7);
 
     // helper function to generate a target position with minimum distance requirement
     const generateTarget = (currentLeft, currentTop) => {
@@ -27,7 +28,10 @@ export default function useCoinlings(count, playableAreaPercent = 100, playableA
             attempts++;
         } while (distance < minTravelDistance && attempts < 20);
         
-        return { targetTop, targetLeft };
+        // determine sprite direction based on which half target is in
+        const facingRight = targetLeft > middlePos;
+        
+        return { targetTop, targetLeft, facingRight };
     };
 
     // initializes position data for each coinling, runs everytime count changes
@@ -38,13 +42,14 @@ export default function useCoinlings(count, playableAreaPercent = 100, playableA
             const startTop = minPos + Math.random() * (playableAreaPercent - coinlingSize);
             const startleft = minPos + Math.random() * (playableAreaPercent - coinlingSize);
             // determines where coinling should move (random within accessible area, with minimum distance)
-            const { targetTop, targetLeft } = generateTarget(startleft, startTop);
+            const { targetTop, targetLeft, facingRight } = generateTarget(startleft, startTop);
 
             newPositions.push({
                 top: startTop,
                 left: startleft,
                 targetTop,
                 targetLeft,
+                facingRight,
                 duration: 3 + Math.random() * 2,
                 paused: false
             });
@@ -78,12 +83,13 @@ export default function useCoinlings(count, playableAreaPercent = 100, playableA
                                 setPositions((prev) =>
                                     prev.map((ent, idx) => {
                                         if (idx !== i) return ent;
-                                        const { targetTop, targetLeft } = generateTarget(ent.left, ent.top);
+                                        const { targetTop, targetLeft, facingRight } = generateTarget(ent.left, ent.top);
                                         return {
                                             ...ent,
                                             waiting: false,
                                             targetTop,
                                             targetLeft,
+                                            facingRight,
                                             duration: 3 + Math.random() * 2,
                                         };
                                     })

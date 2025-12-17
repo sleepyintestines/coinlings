@@ -10,7 +10,7 @@ const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDr
     const [dragging, setDragging] = useState(false);
     const [offset, setOffset] = useState({x: 0, y: 0});
 
-    const {top, left, targetTop, targetLeft, duration} = position;
+    const {top, left, targetTop, targetLeft, duration, facingRight} = position;
     const isMoving = Math.abs(left - targetLeft) > 0.5 || Math.abs(top - targetTop) > 0.5;
 
     const hasMovedRef = useRef(false);
@@ -124,12 +124,13 @@ const coinling = forwardRef(function Coinling({ coinling, position, onMove, onDr
                 ref={setRef}
                 src={coinling.sprite}
                 alt="coinling"
-                className={`coinling ${isMoving ? "coinling-moving" : ""}`}
+                className={`coinling ${isMoving ? "coinling-moving" : ""} ${facingRight ? "facing-right" : ""}`}
                 style={{
                     position: "relative",
                     width: "auto",
                     height: "auto",
                     transformOrigin: "center bottom",
+                    transform: facingRight ? "scaleX(-1)" : "scaleX(1)",
                 }}
                 draggable={false}
             />
