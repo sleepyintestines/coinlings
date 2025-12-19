@@ -216,7 +216,9 @@ function view({hideHeader}) {
                     transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`,
                     transformOrigin: "top left",
                     position: "relative",
-                    background: "#000", // non accessible area is black
+                    backgroundImage: "url('/backgrounds/extrabg.png')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                 }}
             >
                 {/* accessible area container */}

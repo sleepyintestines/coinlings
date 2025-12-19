@@ -14,7 +14,7 @@ const  coinlingSchema = new mongoose.Schema({
             "grumpy",
             "mysterious",
             "shy",
-            "talkative",
+            "greedy",
         ],
         required: true,
     },

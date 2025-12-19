@@ -303,6 +303,9 @@ function overworld({coinlings, onRefresh, deleteMode, onDeleteHouse, show = fals
                     transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`,
                     transformOrigin: "top left",
                     position: "relative",
+                    backgroundImage: "url('/backgrounds/mainbg.png')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                 }}
             >
                 {houses.map((v) => {
@@ -354,10 +357,10 @@ function overworld({coinlings, onRefresh, deleteMode, onDeleteHouse, show = fals
                                         : (isDragging ? "grabbing" : "grab"),
                                     filter: deleteMode
                                         ? (count === 0
-                                            ? "drop-shadow(0 0 8px rgba(239, 68, 68, 0.8))"
+                                            ? "drop-shadow(0 0 8px rgba(252, 0, 0, 0.8))"
                                             : "grayscale(50%) brightness(0.6)")
                                         : (canMerge
-                                            ? "drop-shadow(0 0 8px rgba(34, 197, 94, 0.8))"
+                                            ? "drop-shadow(0 0 8px rgba(188, 241, 102, 0.8))"
                                             : isHovered
                                                 ? "drop-shadow(0 0 8px rgba(234, 179, 8, 0.8))"
                                                 : "none"),
@@ -402,7 +405,7 @@ function overworld({coinlings, onRefresh, deleteMode, onDeleteHouse, show = fals
                                         color: "white",
                                         padding: "4px 8px",
                                         borderRadius: "4px",
-                                        fontSize: "0.7rem",
+                                        fontSize: "2rem",
                                         fontWeight: "bold",
                                         whiteSpace: "nowrap",
                                         pointerEvents: "none",

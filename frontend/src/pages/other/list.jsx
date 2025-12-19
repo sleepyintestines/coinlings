@@ -68,7 +68,6 @@ function list({ onClose, list, type = "dead" }){
                                         style={{
                                             width: "64px",
                                             height: "64px",
-                                            imageRendering: "pixelated",
                                             border: "2px solid #ccc",
                                             borderRadius: "8px",
                                             background: "#f5f5f5"
