@@ -1,6 +1,6 @@
 # money-tracker
 gacha-inspired savings-tracker web app <br>
-! still a in prototyping phase
+! still a prototyping phase
 
 # project setup
 1. start frontend <br>
