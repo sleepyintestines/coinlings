@@ -64,40 +64,45 @@ router.patch("/:id/name", protect, async (req, res) => {
 router.patch("/:id/house", protect, async (req, res) => {
     try{
         const {houseId} = req.body;
-        const resident = await Resident.findOne({
-            _id: req.params.id,
-            user: req.user,
-            dead: false
-        });
+        
+        // fetch resident, destination, and count in parallel
+        const [resident, destination, count] = await Promise.all([
+            Resident.findOne({
+                _id: req.params.id,
+                user: req.user,
+                dead: false
+            }),
+            House.findOne({
+                _id: houseId,
+                user: req.user,
+                deleted: false
+            }),
+            Resident.countDocuments({
+                house: houseId,
+                dead: false
+            })
+        ]);
 
         if (!resident){
             return res.status(404).json({error: "Resident not found!"});
         }
 
-        // validate target house
-        const destination = await House.findOne({
-            _id: houseId,
-            user: req.user,
-            deleted: false
-        });
-
         if(!destination){
             return res.status(404).json({error: "Destination not found!"});
         }
-
-        // check target house capacity
-        const count = await Resident.countDocuments({
-            house: houseId,
-            dead: false
-        });
 
         if(count >= destination.capacity){
             return res.status(400).json({error: "House is full!"});
         }
 
-        resident.house = houseId;
-        await resident.save();
-        res.json({ resident });
+        // use findOneAndUpdate for atomic operation
+        const updated = await Resident.findOneAndUpdate(
+            { _id: req.params.id, user: req.user, dead: false },
+            { $set: { house: houseId } },
+            { new: true }
+        );
+        
+        res.json({ resident: updated });
     }catch (err){
         res.status(500).json({error: err.message});
     }

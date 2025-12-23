@@ -187,15 +187,27 @@ function overworld({residents, onRefresh, deleteMode, onDeleteHouse, show = fals
             const source = houses.find(v => v._id === draggingHouse);
             const target = houses.find(v => v._id === hoveredHouse);
 
-            if (source && target && canMergeUI(source, target)) {
-                await mergeHouses(source._id, target._id);
-            } else if (source) {
-                // if didn't merge update house position
-                await updateHousePosition(source._id, source.leftPercent, source.topPercent);
-            }
-
+            // clear dragging state immediately
+            const shouldMerge = source && target && canMergeUI(source, target);
+            const sourceId = source?._id;
+            const targetId = target?._id;
+            const sourceLeft = source?.leftPercent;
+            const sourceTop = source?.topPercent;
+            
             setDraggingHouse(null);
             setHoveredHouse(null);
+
+            // perform API calls in background without blocking
+            if (shouldMerge) {
+                mergeHouses(sourceId, targetId).catch(err => {
+                    console.error("Merge failed:", err);
+                });
+            } else if (source) {
+                // if didn't merge update house position
+                updateHousePosition(sourceId, sourceLeft, sourceTop).catch(err => {
+                    console.error("Position update failed:", err);
+                });
+            }
         };
 
         document.addEventListener("mousemove", handleMouseMove);
@@ -256,19 +268,28 @@ function overworld({residents, onRefresh, deleteMode, onDeleteHouse, show = fals
             return distance < 5;
         });
 
+        // clear dragging state immediately for instant feedback
+        const residentId = draggingResident._id;
+        const sourceHouseId = draggingResident.sourceHouse._id;
+        setDraggingResident(null);
+
         // if dropped on a different house, move it
-        if (targetHouse && targetHouse._id !== draggingResident.sourceHouse._id) {
+        if (targetHouse && targetHouse._id !== sourceHouseId) {
             try {
-                await moveResident(draggingResident._id, targetHouse._id);
-                onRefresh();
+                // move API call happens in background, no await to block UI
+                moveResident(residentId, targetHouse._id).then(() => {
+                    onRefresh();
+                }).catch((error) => {
+                    console.error("Failed to move resident ->", error);
+                    if (onError) onError("Failed to move resident. House might be full.");
+                    onRefresh(); // refresh to revert visual state
+                });
             } catch (error) {
                 console.error("Failed to move resident ->", error);
                 if (onError) onError("Failed to move resident. House might be full.");
             }
         }
-
-        setDraggingResident(null);
-    }, [draggingResident, houses, onRefresh]);
+    }, [draggingResident, houses, onRefresh, onError]);
 
     // resident drag logic
     useEffect(() => {

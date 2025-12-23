@@ -53,23 +53,23 @@ function Content() {
 
     const fetchData = async () => {
       try {
-        // get transactions 
-        const tx = await apiFetch("/transactions", { token: user.token });
+        // fetch transactions and residents in parallel
+        const [tx, g] = await Promise.all([
+          apiFetch("/transactions", { token: user.token }),
+          apiFetch("/resident", { token: user.token })
+        ]);
+        
         console.log("Transactions fetched:", tx);
-        setTransactions(tx);
-
-        // get residents
-        const g = await apiFetch("/resident", { token: user.token });
         console.log("Residents fetched:", g);
+        
+        setTransactions(tx);
         setResidents(g);
-
-        // set balance
         setBalance(user.balance ?? 0);
       } catch (err) {
         console.error("Error fetching data ->", err);
       } finally {
         if(isLoading){
-          setTimeout(() => setIsLoading(false), 800);
+          setTimeout(() => setIsLoading(false), 200);
         }
       }
     };
@@ -259,6 +259,8 @@ function Content() {
         element={
           !user ? (
             <Navigate to="/login" />
+          ) : isLoading ? (
+            <div className="loading-screen">Loading...</div>
           ) : (
             <div>
               <View hideHeader={hideHeader} />

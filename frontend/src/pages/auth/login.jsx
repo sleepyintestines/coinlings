@@ -5,7 +5,7 @@ import axios from "axios"
 import Password from "../../components/password.jsx"
 
 export default function login({ onLogin }){
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function login({ onLogin }){
         try{
             const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
             const {data} = await axios.post(`${apiUrl}/api/auth/login`, 
-                { email, password },
+                { username, password },
                 {headers: {"Content-Type": "application/json"}}
             );
 
@@ -68,12 +68,12 @@ export default function login({ onLogin }){
                             fontWeight: "bold",
                             textAlign: "left"
                         }}>
-                            Email
+                            Username
                         </label>
                         <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             required
                             style={{
                                 width: "100%",

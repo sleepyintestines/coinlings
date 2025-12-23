@@ -14,6 +14,7 @@ function view({hideHeader}) {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
     const { 
         camera, 
         MIN_SCALE, 
@@ -89,6 +90,7 @@ function view({hideHeader}) {
     useEffect(() => {
         async function fetchHouse() {
             try {
+                setLoading(true);
                 const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
                 const token = userInfo.token;
                 const payload = await apiFetch(`/houses/${id}`, {token});
@@ -98,6 +100,8 @@ function view({hideHeader}) {
                 setNewName(payload.house.name || "House");
             } catch (err) {
                 console.error("Failed to load house:", err);
+            } finally {
+                setLoading(false);
             }
         }
         fetchHouse();
@@ -144,6 +148,10 @@ function view({hideHeader}) {
 
     return (
         <>
+            {loading ? (
+                <div className="loading-screen">Loading house...</div>
+            ) : (
+                <>
             {house && !hideHeader && (
                 <div
                     style={{
@@ -345,6 +353,8 @@ function view({hideHeader}) {
                 )}
             </div>
             </div>
+                </>
+            )}
         </>
     );
 }

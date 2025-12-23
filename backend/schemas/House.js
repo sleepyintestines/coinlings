@@ -10,4 +10,8 @@ const houseSchema = new mongoose.Schema({
     deleted: {type: Boolean, default: false}
 }, {timestamps: true});
 
+// indexes for faster queries
+houseSchema.index({ user: 1, deleted: 1 });
+houseSchema.index({ _id: 1, user: 1, deleted: 1 });
+
 export default mongoose.model("House", houseSchema);

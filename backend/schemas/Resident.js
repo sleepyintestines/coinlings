@@ -22,6 +22,11 @@ const  residentScheme = new mongoose.Schema({
     dead: {type: Boolean, default: false},
 }, {timestamps: true});
 
+// indexes for faster queries
+residentScheme.index({ user: 1, dead: 1 });
+residentScheme.index({ house: 1, dead: 1 });
+residentScheme.index({ _id: 1, user: 1, dead: 1 });
+
 // assigns rarity
 residentScheme.pre("save", function() {
     if(!this.rarity){

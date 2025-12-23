@@ -11,11 +11,11 @@ const generateToken = (id) => {
 
 // user registration route
 router.post("/register", async (req, res) => {
-    const {email, password} = req.body;
+    const {username, password} = req.body;
 
     try{
         // input validation 
-        if(!email || !password){
+        if(!username || !password){
             return res.status(400).json({message: "All fields are required!"});
         }
 
@@ -23,16 +23,16 @@ router.post("/register", async (req, res) => {
             return res.status(400).json({message: "Password must be at least 8 characters!"});
         }
 
-        if(await User.findOne({email})){
-            return res.status(400).json({message: "Email already exists!"});
+        if(await User.findOne({username})){
+            return res.status(400).json({message: "Username already exists!"});
         }
 
         // create new user
-        const user = await User.create({email, password});
+        const user = await User.create({username, password});
 
         res.json({
             _id: user._id,
-            email: user.email,
+            username: user.username,
             balance: user.balance,
             token: generateToken(user._id),
         });
@@ -43,11 +43,11 @@ router.post("/register", async (req, res) => {
 
 // user login route
 router.post("/login", async (req, res) => {
-    const {email, password} = req.body;
+    const {username, password} = req.body;
 
     try{
-        // validate inputted email
-        const user = await User.findOne({email});
+        // validate inputted username
+        const user = await User.findOne({username});
         if(!user){
             return res.status(400).json({message: "Invalid login!"});
         }
@@ -60,7 +60,7 @@ router.post("/login", async (req, res) => {
 
         res.json({
             _id: user._id,
-            email: user.email,
+            username: user.username,
             balance: user.balance,
             token: generateToken(user._id),
         });
